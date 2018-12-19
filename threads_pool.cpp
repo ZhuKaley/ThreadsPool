@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "threads_pool.h"
+#include "async_cond_queue.h"
+#include "async_eventfd_queue.h"
 
 threads_pool::threads_pool() :
     m_pool(NULL)
@@ -38,7 +40,8 @@ bool threads_pool::create(int pool_size, int queue_size)
         queue_size = MAX_QUEUE_CAPACITY;
     }
 
-    m_pool->queue = new async_cond_queue();
+    //m_pool->queue = new async_cond_queue();
+    m_pool->queue = new async_eventfd_queue();
     if(!m_pool->queue)
     {
         destroy();
@@ -76,6 +79,7 @@ bool threads_pool::destroy()
     }
     
     m_pool->shutdown = 1;
+    m_pool->queue->destroy();
     for(int i = 0; i < m_pool->capacity; i++)
     {
         pthread_join(m_pool->threads[i], NULL);
@@ -138,7 +142,7 @@ void* threads_pool::run(void* obj)
 
     task_t task;
 
-    std::cout << "id2: " << pthread_self() << std::endl;
+    //std::cout << "id2: " << pthread_self() << std::endl;
 
 
     while(1)
@@ -150,25 +154,28 @@ void* threads_pool::run(void* obj)
         
         if(pool->m_pool->queue->empty())
         {
-            continue;
+            //continue;
         }
 
-        task_t *tmp = pool->m_pool->queue->front(50);
+        task_t *tmp = pool->m_pool->queue->front(5000);
         if(!tmp)
         {
+            //sleep(1);
             continue;
         }
 
         task.run = tmp->run;
         task.arg = tmp->arg;
         
-        //pool->m_pool->queue->pop();
+        pool->m_pool->queue->pop();
 
         task.run(task.arg);
 
 
-        sleep(1);
+        //sleep(1);
     }
+
+    std::cout << "thread exit." << std::endl;
     
     return NULL;
 }

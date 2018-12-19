@@ -7,8 +7,9 @@ void* test(void *arg)
 {
     //std::cout << "int test..." << std::endl;
     //std::cout << "arg: " << *(int *)arg << std::endl;
+    static int i = 0;
 
-    std::cout << "current thread id: " << pthread_self() << std::endl;
+    std::cout << "current thread id: " << pthread_self() << ", i: " << i++ << std::endl;
 }
 
 int main()
@@ -16,17 +17,24 @@ int main()
     std::cout << "running..." << std::endl;
     
     threads_pool pool;
-    if(!pool.create(5, 10))
+    if(!pool.create(100, 1000))
     {
         std::cout << "create thread pool failed." << std::endl;
         return -1;
     }
 
-    pool.add_task(test, NULL);
+    
+    
     while(1)
     {
-        sleep(1);
+        sleep(3);
+        for(int i = 0; i < 800; i++)
+        {
+            pool.add_task(test, NULL);;
+        }
     }
+
+    sleep(5);
     
     pool.destroy();
 

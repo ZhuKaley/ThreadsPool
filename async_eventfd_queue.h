@@ -1,32 +1,31 @@
-#ifndef __ASYNC_COND_QUEUE_H__
-#define __ASYNC_COND_QUEUE_H__
-
-#include <pthread.h>
+#ifndef __ASYNC_EVENTFD_QUEUE_H__
+#define __ASYNC_EVENTFD_QUEUE_H__
 
 #include "queue.h"
 #include "base_async_queue.h"
 
-typedef struct cond_queue
-{
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
-    queue *task_queue;
-    int quit;   //0: thread not quit,  1: thread quit
-    int wait_threads_count;
 
-    cond_queue() :
-        quit(0),
-        wait_threads_count(0)
+typedef struct eventfd_queue
+{
+    queue *task_queue;
+    int epfd;   //epoll fd
+    int evfd;   //event fd
+    int quit;   //0: thread not quit,  1: thread quit
+
+    eventfd_queue() :
+        epfd(-1),
+        quit(0)/*,
+        wait_threads_count(0)*/
     {
 
     }
-} cond_queue_t;
+} eventfd_queue_t;
 
-class async_cond_queue : public base_async_queue
+class async_eventfd_queue : public base_async_queue
 {
 public:
-    async_cond_queue();
-    ~async_cond_queue();
+    async_eventfd_queue();
+    ~async_eventfd_queue();
 
     bool create(const int capacity);
     bool destroy();
@@ -48,7 +47,8 @@ private:
 
 private:
     bool m_created;
-    cond_queue_t *m_q;
+    eventfd_queue_t *m_q;
+        
 };
 
 #endif

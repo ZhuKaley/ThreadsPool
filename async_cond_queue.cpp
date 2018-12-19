@@ -1,8 +1,11 @@
+#include <iostream>
+
 #include <time.h>
 
 #include "async_cond_queue.h"
 
 async_cond_queue::async_cond_queue() :
+    m_created(false),
     m_q(NULL)
 {
 
@@ -15,9 +18,9 @@ async_cond_queue::~async_cond_queue()
 
 bool async_cond_queue::create(const int capacity)
 {
-    if(m_q)
+    if(m_created)
     {
-        free();
+        return true;
     }
 
     m_q = new cond_queue;
@@ -38,7 +41,7 @@ bool async_cond_queue::create(const int capacity)
     }
 
     m_q->task_queue = new queue();
-    if(!m_q->task_queue->create(capacity))
+    if(!m_q->task_queue || !m_q->task_queue->create(capacity))
     {
         free();
         return false;
@@ -46,6 +49,7 @@ bool async_cond_queue::create(const int capacity)
 
     m_q->quit = 0;
     m_q->wait_threads_count = 0;
+    m_created = true;
     
     return true;
 }
@@ -92,6 +96,7 @@ task_t* async_cond_queue::front(int milliseconds)
     }
 
     t = m_q->task_queue->front();
+    std::cout << "queue size: " << size() << std::endl;
     pthread_mutex_unlock(&(m_q->mutex));
 
     return t;
@@ -131,7 +136,11 @@ bool async_cond_queue::push(const task_t *t)
     }
 
     pthread_mutex_lock(&(m_q->mutex));
-    m_q->task_queue->push(t);
+    if(!m_q->task_queue->push(t))
+    {
+        std::cout << "push failed.\n";
+    }
+    
     if(m_q->wait_threads_count > 0)
     {
         pthread_cond_signal(&(m_q->cond));
@@ -197,6 +206,8 @@ void async_cond_queue::free()
 
         delete m_q;
         m_q = NULL;
+        
+        m_created = false;
     }
 }
 

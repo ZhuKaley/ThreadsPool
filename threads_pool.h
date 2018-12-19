@@ -1,7 +1,7 @@
 #ifndef __THREADS_POOL_H__
 #define __THREADS_POOL_H__
 
-#include "async_cond_queue.h"
+#include "base_async_queue.h"
 
 #define MAX_POOL_CAPACITY 128
 #define MAX_QUEUE_CAPACITY 65535
@@ -11,7 +11,7 @@ typedef struct pool
 {
     bool started;
     pthread_t *threads;
-    async_cond_queue *queue;
+    base_async_queue *queue;
     int capacity;
     int queue_capacity;
     int shutdown;
