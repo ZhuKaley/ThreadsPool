@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <sys/errno.h>
 
 #include "async_eventfd_queue.h"
 
@@ -46,7 +47,7 @@ bool async_eventfd_queue::create(const int capacity)
         std::cout << "create epoll failed." << std::endl;;
         return false;
     }
-#if 0
+#if 1
     if((m_q->evfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) == -1)
     {
         free();
@@ -82,7 +83,7 @@ task_t* async_eventfd_queue::front(int milliseconds)
         return NULL;
     }
 
-    std::cout << "before front queue size: " << size() << ", thread id: " << pthread_self() << std::endl;
+    //std::cout << "before front queue size: " << size() << ", thread id: " << pthread_self() << std::endl;
 
     if(empty())
     {
@@ -96,8 +97,13 @@ task_t* async_eventfd_queue::front(int milliseconds)
 
         long long i = 0;
         read(events[0].data.fd, &i, sizeof(i));
+        if(errno == EAGAIN || errno == EINVAL)
+        {
+            std::cout << "read failed." << std::endl;
+            return NULL;
+        }
 
-#if 1
+#if 0
         struct epoll_event ev;
         ev.events = EPOLLIN;
         ev.data.fd = events[0].data.fd;
@@ -145,7 +151,7 @@ bool async_eventfd_queue::push(const task_t *t)
         return false;
     }
 
-#if 1
+#if 0
     int evfd = -1;
     if((evfd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) == -1)
     {
@@ -167,7 +173,9 @@ bool async_eventfd_queue::push(const task_t *t)
 #endif
 
     long long i = 1;
-    int ret = write(evfd, &i, sizeof(i));
+    int ret = write(m_q->evfd, &i, sizeof(i));
+
+    //std::cout << "ret: " << ret << std::endl;
     
     return true;
 }

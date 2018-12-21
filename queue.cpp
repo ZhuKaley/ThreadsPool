@@ -58,7 +58,12 @@ task_t* queue::front()
         return NULL;
     }
 
-    return &m_q->tasks[m_q->head];
+    if(m_q->head >= m_q->capacity || m_q->head < 0)
+    {        
+        std::cout << "task index: " << m_q->head << std::endl;
+    }
+
+    return &(m_q->tasks[m_q->head]);
 }
 
 task_t* queue::back()
@@ -78,8 +83,15 @@ void queue::pop()
         return;
     }
 
+    if(m_q->head >= m_q->capacity || m_q->head < 0)
+    {
+        std::cout << "pop head: " << m_q->head << std::endl;
+    }
+
     m_q->head = (m_q->head + 1) % m_q->capacity;
     m_q->size--;
+
+    //std::cout << "m_q->head: " << m_q->head << std::endl;
 }
 
 bool queue::push(const task_t *t)
@@ -87,6 +99,11 @@ bool queue::push(const task_t *t)
     if(!t || full())
     {
         return false;
+    }
+
+    if(m_q->tail > m_q->capacity || m_q < 0)
+    {
+        std::cout << "push failed." << std::endl;
     }
 
     m_q->tasks[m_q->tail].run = t->run;

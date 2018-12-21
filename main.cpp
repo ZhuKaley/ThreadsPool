@@ -2,6 +2,7 @@
 
 #include "queue.h"
 #include "threads_pool.h"
+#include "thread_pool.h"
 
 void* test(void *arg)
 {
@@ -16,7 +17,8 @@ int main()
 {
     std::cout << "running..." << std::endl;
     
-    threads_pool pool;
+    //threads_pool pool;
+    thread_pool pool;
     if(!pool.create(100, 1000))
     {
         std::cout << "create thread pool failed." << std::endl;
@@ -24,19 +26,28 @@ int main()
     }
 
     
-    
+    int i = 0;
     while(1)
     {
-        sleep(3);
-        for(int i = 0; i < 800; i++)
+        //sleep(1);
+        for(i = 0; i < 500; i++)
         {
-            pool.add_task(test, NULL);;
+            if(!pool.add_task(test, NULL))
+            {
+                std::cout << "add task failed." << std::endl;
+                //return -1;
+            }
         }
+        
+        std::cout << "main i : " << i++ << std::endl;
+
     }
 
     sleep(5);
     
     pool.destroy();
+
+    std::cout << "app exit." << std::endl;
 
     return 0;
 }
